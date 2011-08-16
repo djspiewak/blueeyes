@@ -6,7 +6,7 @@ import com.mongodb.{BasicDBObject, DBObject}
 import java.util.regex.Pattern
 import blueeyes.core.data.Bijection
 
-class MongoBijection[V <: MongoValueRepr, F, O <: V {type Values = Map[String, Any]}](factory: MongoBijectionFactory[V, F, O]) extends Bijection[DBObject, O]{
+class MongoBijection[V <: MongoValueRepr, F, O <: V {type Unboxed = Map[String, Any]}](factory: MongoBijectionFactory[V, F, O]) extends Bijection[DBObject, O]{
 
   implicit def apply(dbObject: DBObject): O = {
     val allKeys  = asScalaSet(dbObject.keySet)
@@ -17,7 +17,7 @@ class MongoBijection[V <: MongoValueRepr, F, O <: V {type Values = Map[String, A
     factory.mongoObject(pureKeys.map(toJField(_)).toList)
   }
 
-  implicit def unapply(mongoObject: O): DBObject = toDBObject(mongoObject.values)
+  implicit def unapply(mongoObject: O): DBObject = toDBObject(mongoObject.unbox)
 
   private def fromDBValue[M](value: M): V = value match {
     case x: String                  => factory.mongoString(x)
@@ -70,7 +70,7 @@ class MongoBijection[V <: MongoValueRepr, F, O <: V {type Values = Map[String, A
   }
 }
 
-trait MongoBijectionFactory[V <: MongoValueRepr, F, O <: V {type Values = Map[String, Any]}]{
+trait MongoBijectionFactory[V <: MongoValueRepr, F, O <: V {type Unboxed = Map[String, Any]}]{
   def mongoBinary (value: Array[Byte]): V
   def mongoDate   (value: DateTime): V
   def mongoRegex  (pattern: String, flags: Option[Int]): V

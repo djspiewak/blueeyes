@@ -3,73 +3,73 @@ package blueeyes.persistence.mongo
 import org.joda.time.DateTime
 
 sealed trait MongoValue{
-  type Values;
-  def values: Values
+  type Unboxed
+  def unbox: Unboxed
 }
 
 case class MongoBoolean(value: Boolean) extends MongoValue{
-  type Values = Boolean
-  def values = value
+  type Unboxed = Boolean
+  def unbox = value
 }
 
 case class MongoInt(value: Int) extends MongoValue{
-  type Values = Int
-  def values = value
+  type Unboxed = Int
+  def unbox = value
 }
 
 case class MongoLong(value: Long) extends MongoValue{
-  type Values = Long
-  def values = value
+  type Unboxed = Long
+  def unbox = value
 }
 
 case class MongoDouble(value: Double) extends MongoValue{
-  type Values = Double
-  def values = value
+  type Unboxed = Double
+  def unbox = value
 }
 
 case class MongoFloat(value: Float) extends MongoValue{
-  type Values = Float
-  def values = value
+  type Unboxed = Float
+  def unbox = value
 }
 
 case class MongoString(value: String) extends MongoValue{
-  type Values = String
-  def values = value
+  type Unboxed = String
+  def unbox = value
 }
 
 case class MongoRegex(pattern: String, options: Option[Int]) extends MongoValue{
-  type Values = (String, Int)
-  def values = (pattern, options.getOrElse(0))
+  type Unboxed = (String, Int)
+  def unbox = (pattern, options.getOrElse(0))
 }
 
 case class MongoBinary(value: Array[Byte]) extends MongoValue{
-  type Values = Array[Byte]
-  def values  = value
+  type Unboxed = Array[Byte]
+  def unbox  = value
 }
 
 case class MongoDate(value: DateTime) extends MongoValue{
-  type Values = DateTime
-  def values = value
+  type Unboxed = DateTime
+  def unbox = value
 }
 
 case object MongoNull extends MongoValue{
-  type Values = Null
-  def values = null
+  type Unboxed = Null
+  def unbox = null
 }
 
 case class MongoField(name: String, value: MongoValue) extends MongoValue{
-  type Values = (String, value.Values)
-  def values = (name, value.values)
+  type Unboxed = (String, value.Unboxed)
+  def unbox = (name, value.unbox)
 }
 
 case class MongoArray(elements: List[MongoValue]) extends MongoValue{
-  type Values = List[Any]
-  def values = elements.map(_.values)
+  type Unboxed = List[Any]
+  def unbox = elements.map(_.unbox)
 }
 
 case class MongoObject(fields: List[MongoField]) extends MongoValue{
-  type Values = Map[String, Any]
-  def values = Map() ++ fields.map(_.values : (String, Any))
+  type Unboxed = Map[String, Any]
+  def unbox = Map() ++ fields.map(_.unbox : (String, Any))
 
   override lazy val hashCode = Set(this.fields: _*).hashCode
 
