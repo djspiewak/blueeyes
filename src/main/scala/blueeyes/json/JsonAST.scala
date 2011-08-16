@@ -129,18 +129,21 @@ object JsonAST {
      * </pre>
      */
     def \\(nameToFind: String): JValue = {
-      def find(json: JValue, acc: List[JField]): List[JField] = json match {
-        case JObject(l) => l.foldLeft(acc) { (a, f) => 
-          if (f.name == nameToFind) f :: find(f.value, a)
-          else find(f.value, a)
-        }
-
-        case JArray(l) => l.foldLeft(acc) { (a, v) => find(v, a) }
-
-        case _ => acc
+      def findInValue(json: JValue): List[JValue] = json match {
+        case JObject(xs) => xs flatMap findInField
+        case JArray(xs) => xs flatMap findInValue
+        case _ => Nil
       }
-
-      JArray(find(this, Nil).map(_.value).reverse)
+      
+      def findInField(field: JField): List[JValue] = field match {
+        case JField(`nameToFind`, value) => value :: findInValue(value)
+        case JField(_, value) => findInValue(value)
+      }
+      
+      findInValue(this) match {
+        case x :: Nil => x
+        case x => JArray(x)
+      }
     }
 
     /** XPath-like expression to query JSON fields by type. Matches only fields on
