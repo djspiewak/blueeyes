@@ -23,15 +23,15 @@ object GroupFunction extends JObjectFields{
     var result         = List[JValue]()
 
     groupedObject.foreach(group => {
-      val groupValue = group._2.foldLeft(initial){ (groupResult, current) => RhinoScript(reduceFunction.format(renderJObject(current), renderJObject(groupResult)))().get}
-      result = group._1.merge(groupValue) :: result
+      val groupValue = group._2.foldLeft(initial){ (groupResult, current) => RhinoScript(reduceFunction.format(renderJObject(current), renderJObject(groupResult)))().get }
+      result = group._1.asUnsafe(JObject) ++ groupValue :: result
     })
 
     JArray(result)
   }
 
   private def groupObject(selection: MongoSelection, objects: List[JObject]) = {
-    val groupedObjects = ValuesGroup[JValue, JObject]()
+    val groupedObjects = new ValuesGroup[JValue, JObject]
 
     def updateValue(value: JValue) = value match{
       case JNothing => Some(JNull)
@@ -83,7 +83,7 @@ private[mongo] object MapReduceFunction extends RhinoJsonImplicits{
       case _ => sys.error("value is not Json")
     }
     val mapScriptPattern = """var record  = %s; record.map  = %s; var emit = function(k, v){emitter.emit(k, v)}; record.map()"""
-    val mapped          = ValuesGroup[Any, JObject](keyTransformer _, valueTransformer _)
+    val mapped          = new ValuesGroup[Any, JObject]
 
     objects.foreach(jobject => RhinoScript(mapScriptPattern.format(renderJObject(jobject), map))(Map("emitter" -> mapped)))
 
@@ -114,17 +114,17 @@ private[mock] object UpdateFunction extends JObjectFields{
   }
 
   private def update(jobject: JObject, fieldPath: JPath, newValue: JValue, merge: Boolean): JObject = {
-    val updated = if (merge) jobject.merge(newValue) else jobject.replace(fieldPath, v => {newValue})
+    val updated = if (merge)
+      jobject ++ newValue.asUnsafe(JObject)
+    else
+      jobject.replace(fieldPath, v => {newValue})
+    
     updated.remove(_ == JNothing).asInstanceOf[JObject]
   }
 }
 
-private[mongo] case class ValuesGroup[K, V](keyTransformer : (Any) => K = (v: Any) => {sys.error("any key is not supported")}, valueTransformer :(Any) => V = (v: Any) => {sys.error("any value is not supported")}){
+private[mongo] class ValuesGroup[K, V] {
   private var groupedValues = Map[K, List[V]]()
-
-  def emit(key: Any, value: Any) = {
-    emitCorrect(keyTransformer(key), valueTransformer(value))
-  }
 
   def emitCorrect(key: K, value: V){
     val grouped   = value :: groupedValues.get(key).getOrElse(Nil)

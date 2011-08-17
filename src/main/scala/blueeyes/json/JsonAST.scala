@@ -25,14 +25,6 @@ object JsonAST {
   import scala.text.{Document, DocText}
   import scala.text.Document._
 
-  /** Concatenates a sequence of <code>JValue</code>s.
-   * <p>
-   * Example:<pre>
-   * concat(JInt(1), JInt(2)) == JArray(List(JInt(1), JInt(2)))
-   * </pre>
-   */
-  def concat(xs: JValue*) = xs.foldLeft(JNothing: JValue)(_ ++ _)
-
   /**
    * Typesafe casting for jvalues via a partial function. This is here mostly to help
    * out type inference in the JManifest implementations
@@ -42,7 +34,7 @@ object JsonAST {
   /**
    * Data type for Json AST.
    */
-  sealed abstract class JValue extends Product with Merge.Mergeable with Diff.Diffable {
+  sealed abstract class JValue extends Product with Diff.Diffable {
     type Unboxed
 
     /**
@@ -477,23 +469,6 @@ object JsonAST {
       flatten0(JPath.Identity)(this)
     }
 
-    /** Concatenate with another JSON.
-     * This is a concatenation monoid: (JValue, ++, JNothing)
-     * <p>
-     * Example:<pre>
-     * JArray(JInt(1) :: JInt(2) :: Nil) ++ JArray(JInt(3) :: Nil) ==
-     * JArray(List(JInt(1), JInt(2), JInt(3)))
-     * </pre>
-     */
-    def ++(other: JValue) = (this, other) match {
-      case (JNothing, x) => x
-      case (x, JNothing) => x
-      case (JArray(xs), JArray(ys)) => JArray(xs ::: ys)
-      case (JArray(xs), v: JValue)  => JArray(xs :+ v)
-      case (v: JValue, JArray(xs))  => JArray(v :: xs)
-      case (x, y) => JArray(x :: y :: Nil)
-    }
-
     /** Return a JSON where all elements matching the given predicate are removed.
      * <p>
      * Example:<pre>
@@ -589,6 +564,8 @@ object JsonAST {
     override lazy val unbox = elements.map(_.unbox)
     override def sort: JArray = JArray(elements.map(_.sort).sorted(JValueOrdering))
     override def apply(i: Int): JValue = elements.lift(i).getOrElse(JNothing)
+    
+    def ++(that: JArray) = JArray(this.elements ::: that.elements)
   }
   case object JArray extends JManifest {
     type JType = JArray
@@ -600,6 +577,8 @@ object JsonAST {
     type Unboxed = Map[String, Any]
     override lazy val unbox = fields.map[(String, Any), Map[String, Any]](f => (f.name, f.value.unbox))(collection.breakOut)
     override def sort: JObject = JObject(fields.map(_.sort).sorted(JFieldOrdering))
+    
+    def ++(that: JObject) = JObject(this.fields ::: that.fields)
 
     override lazy val hashCode = Set(this.fields: _*).hashCode
     override def equals(that: Any): Boolean = that match {

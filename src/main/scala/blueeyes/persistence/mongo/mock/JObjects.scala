@@ -15,9 +15,12 @@ private[mock] trait JObjectFields{
     if (!selection.isEmpty) {
       val allJFields = jobjects.map(jobject => selection.map(selectByPath(_, jobject, transformer, jobjectRestorer)))
       allJFields.map(jfields => {
-        val definedJFields = jfields.filter(_ != None).map(_.get)
-        definedJFields.headOption.map(head => definedJFields.tail.foldLeft(head){(jobject, jfield) => jobject.merge(jfield).asInstanceOf[JObject]})
-      }).filter(_ != None).map(_.get)
+        val definedJFields = jfields.flatten map { _ asUnsafe JObject }
+        if (definedJFields.isEmpty)
+          None
+        else
+          Some(definedJFields reduceLeft { _ ++ _ })
+      }).flatten
     } else jobjects
   }
 

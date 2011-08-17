@@ -70,12 +70,12 @@ class HealthMonitor{
 
   def toJValue: JValue = {
     val statistics = List[Map[JPath, Statistic[_, _]]](timerStats, errorStats, sampleStats, countStats, exportedStats)
-    statistics.foldLeft(JObject(Nil)) {(result, element) => result.merge(composeStatistics(element)).asInstanceOf[JObject]}
+    statistics.foldLeft(JObject(Nil)) { (result, element) => result ++ composeStatistics(element) }
   }
 
   def composeStatistics[T](stat: Map[JPath, Statistic[_, _]]) = {
     val jObjects = stat.toList.map(kv => jvalueToJObject(kv._1, kv._2.toJValue))
-    jObjects.foldLeft(JObject(Nil)){(result, element) => result.merge(element).asInstanceOf[JObject]}
+    jObjects.foldLeft(JObject(Nil)) { _ ++ _ }
   }
 
   private def jvalueToJObject(path: JPath, value: JValue): JObject = {

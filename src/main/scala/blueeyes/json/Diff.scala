@@ -32,6 +32,23 @@ case class Diff(changed: JValue, added: JValue, deleted: JValue) {
     }
     Diff(applyTo(changed), applyTo(added), applyTo(deleted))
   }
+  
+  def ++(that: Diff) = (this, that) match {
+    case (Diff(c1, a1, d1), Diff(c2, a2, d2)) =>
+      Diff(combine(c1, c2), combine(a1, a2), combine(d1, d2))
+  }
+
+  // note: this is *not* a merge function, since too JValues will return a JArray
+  // note also that this function is specific to diff semantics; don't expose!
+  private def combine(v1: JValue, v2: JValue) = (v1, v2) match {
+    case (v1: JObject, v2: JObject) => v1 ++ v2
+    case (v1: JArray, v2: JArray) => v1 ++ v2
+    case (JArray(values), v2) => JArray(values :+ v2)
+    case (v1, JArray(values)) => JArray(v1 :: values)
+    case (JNothing, v2) => v2
+    case (v1, JNothing) => v1
+    case (v1, v2) => JArray(v1 :: v2 :: Nil)
+  }
 }
 
 /** Computes a diff between two JSONs.
@@ -63,13 +80,21 @@ object Diff {
 
       case x :: xs => yleft find (_.name == x.name) match {
         case Some(y) =>
-          val Diff(c1, a1, d1) = diff(x.value, y.value)
-          val Diff(c2, a2, d2) = diffRec(xs, yleft.filterNot (_ == y))
-          Diff(c1 ++ c2, a1 ++ a2, d1 ++ d2) 
+          val diff1 = (x, y) match {
+            case (JField(xn, xv), JField(yn, yv)) if (xn == yn) =>
+              diff(xv, yv) map { v => JObject(JField(xn, v) :: Nil) }
+              
+            case (x @ JField(xn, xv), y @ JField(yn, yv)) if (xn != yn) =>
+              Diff(JNothing, JObject(y :: Nil), JObject(x :: Nil))
+          }
+          
+          val diff2 = diffRec(xs, yleft.filterNot (_ == y))
+          diff1 ++ diff2
 
         case None =>
           val Diff(c, a, d) = diffRec(xs, yleft)
-          Diff(c, a, JObject(x :: Nil) merge d)
+          val merger = d as JObject map (JObject(x :: Nil) ++) getOrElse d     // emulate old semantics
+          Diff(c, a, merger)
       }
     }
 
@@ -78,12 +103,14 @@ object Diff {
 
   private def diffVals(vs1: List[JValue], vs2: List[JValue]) = {
     def diffRec(xleft: List[JValue], yleft: List[JValue]): Diff = (xleft, yleft) match {
-      case (xs, Nil) => Diff(JNothing, JNothing, if (xs.isEmpty) JNothing else JArray(xs))
-      case (Nil, ys) => Diff(JNothing, if (ys.isEmpty) JNothing else JArray(ys), JNothing)
+      case (xs, Nil) =>
+        Diff(JNothing, JNothing, if (xs.isEmpty) JNothing else JArray(xs))
+        
+      case (Nil, ys) =>
+        Diff(JNothing, if (ys.isEmpty) JNothing else JArray(ys), JNothing)
+        
       case (x :: xs, y :: ys) =>
-        val Diff(c1, a1, d1) = diff(x, y)
-        val Diff(c2, a2, d2) = diffRec(xs, ys)
-        Diff(c1 ++ c2, a1 ++ a2, d1 ++ d2)
+        diff(x, y) ++ diffRec(xs, ys)
     }
 
     diffRec(vs1, vs2)
