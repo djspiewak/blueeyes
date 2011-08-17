@@ -26,17 +26,33 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
   import JsonAST._
 
   override val defaultPrettyParams = Pretty.Params(2)
+  
+  "JValue" should {
+    "Functor identity" in {
+      val identityProp = (json: JValue) => json == (json mapUp identity)
+      forAll(identityProp) must pass
+    }
+  
+    "Functor composition" in {
+      val compositionProp = (json: JValue, fa: JValue => JValue, fb: JValue => JValue) =>
+        json.mapUp(fb).mapUp(fa) == json.mapUp(fa compose fb)
+  
+      forAll(compositionProp) must pass
+    }
 
-  "Functor identity" in {
-    val identityProp = (json: JValue) => json == (json mapUp identity)
-    forAll(identityProp) must pass
-  }
-
-  "Functor composition" in {
-    val compositionProp = (json: JValue, fa: JValue => JValue, fb: JValue => JValue) =>
-      json.mapUp(fb).mapUp(fa) == json.mapUp(fa compose fb)
-
-    forAll(compositionProp) must pass
+    "Remove all" in {
+      val removeAllProp = (x: JValue) => (x remove { _ => true }) == JNothing
+      forAll(removeAllProp) must pass
+    }
+  
+    "Remove nothing" in {
+      val removeNothingProp = (x: JValue) => (x remove { _ => false }) == x
+      forAll(removeNothingProp) must pass
+    }
+  
+    "Set and retrieve an arbitrary jvalue at an arbitrary path" in {
+      runArbitraryPathSpec
+    }
   }
   
   "JObject monoid" should {
@@ -83,28 +99,6 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
       
       prop must pass
     }
-    
-    "merge with idempotency" in {
-      val prop = forAll { arr: JArray =>
-        (arr ++ arr) mustEqual arr
-      }
-      
-      prop must pass
-    }
-  }
-
-  "Remove all" in {
-    val removeAllProp = (x: JValue) => (x remove { _ => true }) == JNothing
-    forAll(removeAllProp) must pass
-  }
-
-  "Remove nothing" in {
-    val removeNothingProp = (x: JValue) => (x remove { _ => false }) == x
-    forAll(removeNothingProp) must pass
-  }
-
-  "Set and retrieve an arbitrary jvalue at an arbitrary path" in {
-    runArbitraryPathSpec
   }
 
   def runArbitraryPathSpec = {
