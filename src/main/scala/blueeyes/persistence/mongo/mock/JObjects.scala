@@ -19,7 +19,7 @@ private[mock] trait JObjectFields{
         if (definedJFields.isEmpty)
           None
         else
-          Some(definedJFields reduceLeft { _ ++ _ })
+          Some(definedJFields reduceLeft { _ merge _ })
       }).flatten
     } else jobjects
   }

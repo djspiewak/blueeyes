@@ -112,7 +112,7 @@ case object MongoUpdateNothing extends MongoUpdate{
 }
 
 sealed case class MongoUpdateFields(list: ListSet[MongoUpdateField]) extends MongoUpdate{
-  def toJValue: JObject = (list map { _.toJValue }).foldLeft(JObject(Nil)) { _ ++ _ }
+  def toJValue: JObject = (list map { _.toJValue }).foldLeft(JObject(Nil)) { _ merge _ }
 }
 
 sealed trait MongoUpdateField extends MongoUpdate with Change1{  self =>

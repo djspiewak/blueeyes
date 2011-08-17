@@ -172,14 +172,14 @@ object Examples extends Specification {
   }
 
   "JSON building example" in {
-    val json = JObject(JField("name", JString("joe")) :: JField("age", JInt(34)) :: Nil) ++ 
+    val json = JObject(JField("name", JString("joe")) :: JField("age", JInt(34)) :: Nil) merge 
                JObject(JField("name", JString("mazy")) :: JField("age", JInt(31)) :: Nil)
     compact(render(json)) mustEqual """[{"name":"joe","age":34},{"name":"mazy","age":31}]"""
   }
 
   "JSON building with implicit primitive conversions example" in {
     import Implicits._
-    val json = JObject(JField("name", "joe") :: JField("age", 34) :: Nil) ++ 
+    val json = JObject(JField("name", "joe") :: JField("age", 34) :: Nil) merge
                JObject(JField("name", "mazy") :: JField("age", 31) :: Nil)
 
     compact(render(json)) mustEqual """[{"name":"joe","age":34},{"name":"mazy","age":31}]"""

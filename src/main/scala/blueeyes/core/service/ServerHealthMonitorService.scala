@@ -86,6 +86,6 @@ trait ServerHealthMonitor extends blueeyes.json.Implicits with blueeyes.json.JPa
 
   def toJValue(context: HttpServiceContext) = {
     val server     = JObject(JField("server", JObject(JField("hostName", JString(context.hostName)) :: JField("port", context.port) :: JField("sslPort", context.sslPort) :: Nil)) :: Nil)
-    server ++ monitor.toJValue.asUnsafe(JObject)
+    server merge monitor.toJValue.asUnsafe(JObject)
   }
 }

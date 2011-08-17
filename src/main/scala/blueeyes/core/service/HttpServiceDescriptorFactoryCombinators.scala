@@ -48,7 +48,7 @@ trait HttpServiceDescriptorFactoryCombinators extends HttpRequestHandlerCombinat
             val uptimeSeconds = JObject(JField("uptimeSeconds", JInt((System.currentTimeMillis - startTime) / 1000)) :: Nil)
             val health        = monitor.toJValue asUnsafe JObject
             Future.async {
-              HttpResponse[T](content=Some(jValueBijection(health ++ who ++ server ++ uptimeSeconds)))
+              HttpResponse[T](content=Some(jValueBijection(health merge who merge server merge uptimeSeconds)))
             }
           }
         }

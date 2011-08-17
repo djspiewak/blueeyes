@@ -24,7 +24,7 @@ object GroupFunction extends JObjectFields{
 
     groupedObject.foreach(group => {
       val groupValue = group._2.foldLeft(initial){ (groupResult, current) => RhinoScript(reduceFunction.format(renderJObject(current), renderJObject(groupResult)))().get }
-      result = group._1.asUnsafe(JObject) ++ groupValue :: result
+      result = (group._1.asUnsafe(JObject) merge groupValue) :: result
     })
 
     JArray(result)
@@ -115,7 +115,7 @@ private[mock] object UpdateFunction extends JObjectFields{
 
   private def update(jobject: JObject, fieldPath: JPath, newValue: JValue, merge: Boolean): JObject = {
     val updated = if (merge)
-      jobject ++ newValue.asUnsafe(JObject)
+      jobject merge newValue.asUnsafe(JObject)
     else
       jobject.replace(fieldPath, v => {newValue})
     

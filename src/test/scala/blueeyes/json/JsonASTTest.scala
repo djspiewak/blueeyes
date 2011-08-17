@@ -58,8 +58,8 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
   "JObject monoid" should {
     "define {} as identity" in {
       val prop = forAll { obj: JObject =>
-        (obj ++ JObject(Nil)) mustEqual obj
-        (JObject(Nil) ++ obj) mustEqual obj
+        (obj merge JObject(Nil)) mustEqual obj
+        (JObject(Nil) merge obj) mustEqual obj
       }
       
       prop must pass
@@ -67,7 +67,7 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
     
     "preserve associativity" in {
       val prop = forAll { (x: JObject, y: JObject, z: JObject) =>
-        (x ++ (y ++ z)) mustEqual ((x ++ y) ++ z)
+        (x merge (y merge z)) mustEqual ((x merge y) merge z)
       }
       
       prop must pass
@@ -75,7 +75,7 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
     
     "merge with idempotency" in {
       val prop = forAll { obj: JObject =>
-        (obj ++ obj) mustEqual obj
+        (obj merge obj) mustEqual obj
       }
       
       prop must pass
@@ -85,8 +85,8 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
   "JArray monoid" should {
     "define {} as identity" in {
       val prop = forAll { arr: JArray =>
-        (arr ++ JArray(Nil)) mustEqual arr
-        (JArray(Nil) ++ arr) mustEqual arr
+        (arr merge JArray(Nil)) mustEqual arr
+        (JArray(Nil) merge arr) mustEqual arr
       }
       
       prop must pass
@@ -94,7 +94,7 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
     
     "preserve associativity" in {
       val prop = forAll { (x: JArray, y: JArray, z: JArray) =>
-        (x ++ (y ++ z)) mustEqual ((x ++ y) ++ z)
+        (x merge (y merge z)) mustEqual ((x merge y) merge z)
       }
       
       prop must pass

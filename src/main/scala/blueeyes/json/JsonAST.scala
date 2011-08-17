@@ -565,7 +565,7 @@ object JsonAST {
     override def sort: JArray = JArray(elements.map(_.sort).sorted(JValueOrdering))
     override def apply(i: Int): JValue = elements.lift(i).getOrElse(JNothing)
     
-    def ++(that: JArray) = JArray((this.elements ::: that.elements) filter (JNothing !=))
+    def merge(that: JArray) = JArray((this.elements ::: that.elements) filter (JNothing !=))
   }
   case object JArray extends JManifest {
     type JType = JArray
@@ -578,7 +578,7 @@ object JsonAST {
     override lazy val unbox = fields.map[(String, Any), Map[String, Any]](f => (f.name, f.value.unbox))(collection.breakOut)
     override def sort: JObject = JObject(fields.map(_.sort).sorted(JFieldOrdering))
     
-    def ++(that: JObject) = JObject(this.fields ::: that.fields)
+    def merge(that: JObject) = JObject(this.fields ::: that.fields)
 
     override lazy val hashCode = Set(this.fields: _*).hashCode
     override def equals(that: Any): Boolean = that match {

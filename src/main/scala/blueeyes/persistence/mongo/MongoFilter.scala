@@ -117,7 +117,7 @@ sealed case class MongoAndFilter(queries: ListSet[MongoFilter]) extends MongoFil
 
   private def notEqsQuery(queries: ListSet[MongoFilter]) = {
     val objects = queries.map(_.filter).toList collect { case obj: JObject => obj }
-    (JObject(Nil) /: objects) { _ ++ _ }
+    (JObject(Nil) /: objects) { _ merge _ }
   }
   private def eqsQuery(queries: ListSet[MongoFilter]) = {
     val fields = queries.collect{ case MongoFieldFilter(lhs, _, rhs) => JField(JPathExtension.toMongoField(lhs), rhs.toJValue) }.toList
