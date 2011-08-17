@@ -18,7 +18,7 @@ package blueeyes
 package json
 
 import org.scalacheck._
-import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop._
 import org.specs.Specification
 import org.specs.ScalaCheck
 
@@ -38,25 +38,59 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
 
     forAll(compositionProp) must pass
   }
-
-  "Monoid identity" in {
-    val identityProp = (json: JValue) => (json ++ JNothing == json) && (JNothing ++ json == json)
-    forAll(identityProp) must pass
+  
+  "JObject monoid" should {
+    "define {} as identity" in {
+      val prop = forAll { obj: JObject =>
+        (obj ++ JObject(Nil)) mustEqual obj
+        (JObject(Nil) ++ obj) mustEqual obj
+      }
+      
+      prop must pass
+    }
+    
+    "preserve associativity" in {
+      val prop = forAll { (x: JObject, y: JObject, z: JObject) =>
+        (x ++ (y ++ z)) mustEqual ((x ++ y) ++ z)
+      }
+      
+      prop must pass
+    }
+    
+    "merge with idempotency" in {
+      val prop = forAll { obj: JObject =>
+        (obj ++ obj) mustEqual obj
+      }
+      
+      prop must pass
+    }
   }
-
-  "Monoid associativity" in {
-    val assocProp = (x: JValue, y: JValue, z: JValue) => x ++ (y ++ z) == (x ++ y) ++ z
-    forAll(assocProp) must pass
-  }
-
-  "Merge identity" in {
-    val identityProp = (json: JValue) => (json merge JNothing) == json && (JNothing merge json) == json
-    forAll(identityProp) must pass
-  }
-
-  "Merge idempotency" in {
-    val idempotencyProp = (x: JValue) => (x merge x) == x
-    forAll(idempotencyProp) must pass
+  
+  "JArray monoid" should {
+    "define {} as identity" in {
+      val prop = forAll { arr: JArray =>
+        (arr ++ JArray(Nil)) mustEqual arr
+        (JArray(Nil) ++ arr) mustEqual arr
+      }
+      
+      prop must pass
+    }
+    
+    "preserve associativity" in {
+      val prop = forAll { (x: JArray, y: JArray, z: JArray) =>
+        (x ++ (y ++ z)) mustEqual ((x ++ y) ++ z)
+      }
+      
+      prop must pass
+    }
+    
+    "merge with idempotency" in {
+      val prop = forAll { arr: JArray =>
+        (arr ++ arr) mustEqual arr
+      }
+      
+      prop must pass
+    }
   }
 
   "Diff identity" in {
@@ -75,7 +109,15 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
   "Diff is subset of originals" in {
     val subsetProp = (x: JObject, y: JObject) => {
       val Diff(c, a, d) = x diff y
-      y == (y merge (c merge a))
+      
+      val merged = for {
+        co <- c as JObject
+        ao <- a as JObject
+      } yield y ++ co ++ ao
+      
+      merged.isDefined ==> { 
+        y mustEqual merged.get
+      }
     }
     forAll(subsetProp) must pass
   }

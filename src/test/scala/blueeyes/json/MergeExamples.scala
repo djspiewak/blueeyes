@@ -17,15 +17,9 @@
 package blueeyes {
 package json {
 
-import _root_.org.specs.Specification
-
-object MergeExamples extends Specification {
+object MergeExamples {
   import JsonAST._
   import JsonParser._
-
-  "Merge example" in {
-    (scala1 merge scala2) mustEqual expectedMergeResult
-  }
 
   val scala1 = parse("""
     {
@@ -61,10 +55,6 @@ object MergeExamples extends Specification {
       },
       "compiled": true,
     }""")
-
-  "Lotto example" in {
-    (lotto1 merge lotto2) mustEqual mergedLottoResult
-  }
 
   val lotto1 = parse("""
     {

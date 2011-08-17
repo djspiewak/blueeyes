@@ -37,7 +37,7 @@ trait ArbitraryJValue {
   )
 
 
-  def genArray: Gen[JValue] = for (l <- genList) yield JArray(l)
+  def genArray: Gen[JArray] = for (l <- genList) yield JArray(l)
   def genObject: Gen[JObject] = for (l <- genFieldList) yield JObject(l)
 
   def genList = Gen.containerOfN[List, JValue](listSize, genJValue)
@@ -59,6 +59,7 @@ trait ArbitraryJValue {
 
   implicit def arbJValue: Arbitrary[JValue] = Arbitrary(genJValue)
   implicit def arbJObject: Arbitrary[JObject] = Arbitrary(genObject)
+  implicit def arbJArray: Arbitrary[JArray] = Arbitrary(genArray)
   implicit def arbJManifest: Arbitrary[JManifest] = Arbitrary(genJManifest)
   implicit def shrinkJValueClass[T]: Shrink[T] = Shrink(x => Stream.empty)
 }

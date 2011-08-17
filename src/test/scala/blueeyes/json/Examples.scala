@@ -172,26 +172,17 @@ object Examples extends Specification {
   }
 
   "JSON building example" in {
-    val json = concat(JObject(JField("name", JString("joe")) :: JField("age", JInt(34)) :: Nil)) ++ 
-               concat(JObject(JField("name", JString("mazy")) :: JField("age", JInt(31)) :: Nil))
+    val json = JObject(JField("name", JString("joe")) :: JField("age", JInt(34)) :: Nil) ++ 
+               JObject(JField("name", JString("mazy")) :: JField("age", JInt(31)) :: Nil)
     compact(render(json)) mustEqual """[{"name":"joe","age":34},{"name":"mazy","age":31}]"""
   }
 
   "JSON building with implicit primitive conversions example" in {
     import Implicits._
-    val json = concat(JObject(JField("name", "joe") :: JField("age", 34) :: Nil)) ++ 
-               concat(JObject(JField("name", "mazy") :: JField("age", 31) :: Nil))
+    val json = JObject(JField("name", "joe") :: JField("age", 34) :: Nil) ++ 
+               JObject(JField("name", "mazy") :: JField("age", 31) :: Nil)
 
     compact(render(json)) mustEqual """[{"name":"joe","age":34},{"name":"mazy","age":31}]"""
-  }
-
-  "Example which collects all integers and forms a new JSON" in {
-    val json = parse(person)
-    val ints = json.foldDown(JNothing: JValue) { (a, v) => v match {
-      case x: JInt => a ++ x
-      case _ => a
-    }}
-    compact(render(ints)) mustEqual """[35,33]"""
   }
 
   "Example which folds up to form a flattened list" in {

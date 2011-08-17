@@ -23,6 +23,8 @@ object DiffExamples extends Specification {
   import JsonAST._
   import JsonParser._
   import MergeExamples.{scala1, scala2, lotto1, lotto2, mergedLottoResult}
+  
+  noDetailedDiffs()
 
   "Diff example" in {
     val Diff(changed, added, deleted) = scala1 diff scala2
