@@ -93,40 +93,6 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
     }
   }
 
-  "Diff identity" in {
-    val identityProp = (json: JValue) =>
-      (json diff JNothing) == Diff(JNothing, JNothing, json) &&
-      (JNothing diff json) == Diff(JNothing, json, JNothing)
-
-    forAll(identityProp) must pass
-  }
-
-  "Diff with self is empty" in {
-    val emptyProp = (x: JValue) => (x diff x) == Diff(JNothing, JNothing, JNothing)
-    forAll(emptyProp) must pass
-  }
-
-  "Diff is subset of originals" in {
-    val subsetProp = (x: JObject, y: JObject) => {
-      val Diff(c, a, d) = x diff y
-      
-      val merged = for {
-        co <- c as JObject
-        ao <- a as JObject
-      } yield y ++ co ++ ao
-      
-      merged.isDefined ==> { 
-        y mustEqual merged.get
-      }
-    }
-    forAll(subsetProp) must pass
-  }
-
-  "Diff result is same when fields are reordered" in {
-    val reorderProp = (x: JObject) => (x diff reorderFields(x)) == Diff(JNothing, JNothing, JNothing)
-    forAll(reorderProp) must pass
-  }
-
   "Remove all" in {
     val removeAllProp = (x: JValue) => (x remove { _ => true }) == JNothing
     forAll(removeAllProp) must pass
@@ -135,16 +101,6 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
   "Remove nothing" in {
     val removeNothingProp = (x: JValue) => (x remove { _ => false }) == x
     forAll(removeNothingProp) must pass
-  }
-
-  "Remove removes only matching elements (in case of a field, the field is removed)" in {
-    val removeProp = (json: JValue, x: JManifest) => {
-      val removed = json remove typePredicate(x)
-      val Diff(c, a, d) = json diff removed
-
-      removed.flatten.forall(v => !x(v).isDefined)
-    }
-    forAll(removeProp) must pass
   }
 
   "Set and retrieve an arbitrary jvalue at an arbitrary path" in {

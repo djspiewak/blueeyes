@@ -34,7 +34,7 @@ object JsonAST {
   /**
    * Data type for Json AST.
    */
-  sealed abstract class JValue extends Product with Diff.Diffable {
+  sealed abstract class JValue extends Product {
     type Unboxed
 
     /**
@@ -565,7 +565,7 @@ object JsonAST {
     override def sort: JArray = JArray(elements.map(_.sort).sorted(JValueOrdering))
     override def apply(i: Int): JValue = elements.lift(i).getOrElse(JNothing)
     
-    def ++(that: JArray) = JArray(this.elements ::: that.elements)
+    def ++(that: JArray) = JArray((this.elements ::: that.elements) filter (JNothing !=))
   }
   case object JArray extends JManifest {
     type JType = JArray
