@@ -22,6 +22,8 @@ object Examples extends Specification {
   import JsonAST._
   import JsonDSL._
   import JsonParser._
+  
+  noDetailedDiffs()
 
   val lotto = """{
     "lotto":{
@@ -111,7 +113,7 @@ object Examples extends Specification {
 
   "Remove example" in {
     val json = parse(person) removeField { _ == JField("name", "Marilyn") }
-    compact(render(json \\ "name")) mustEqual "[\"Joe\"]"
+    compact(render(json \\ "name")) mustEqual "\"Joe\""
   }
 
   "Queries on person example" in {
@@ -172,17 +174,15 @@ object Examples extends Specification {
   }
 
   "JSON building example" in {
-    val json = JObject(JField("name", JString("joe")) :: JField("age", JInt(34)) :: Nil) merge 
-               JObject(JField("name", JString("mazy")) :: JField("age", JInt(31)) :: Nil)
-    compact(render(json)) mustEqual """[{"name":"joe","age":34},{"name":"mazy","age":31}]"""
+    val json = JObject(JField("name", JString("joe")) :: JField("age", JInt(34)) :: Nil) 
+    compact(render(json)) mustEqual """{"name":"joe","age":34}"""
   }
 
   "JSON building with implicit primitive conversions example" in {
     import Implicits._
-    val json = JObject(JField("name", "joe") :: JField("age", 34) :: Nil) merge
-               JObject(JField("name", "mazy") :: JField("age", 31) :: Nil)
+    val json = JObject(JField("name", "joe") :: JField("age", 34) :: Nil)
 
-    compact(render(json)) mustEqual """[{"name":"joe","age":34},{"name":"mazy","age":31}]"""
+    compact(render(json)) mustEqual """{"name":"joe","age":34}"""
   }
 
   "Example which folds up to form a flattened list" in {
@@ -209,14 +209,4 @@ object Examples extends Specification {
 
     folded mustEqual formed
   }
-
-  "Renders JSON as Scala code" in {
-    val json = parse(lotto)
-    println("json:" + json)
-    val scalaDoc = renderScala(json)
-    val rendered = Printer.compact(scalaDoc)
-    println("rendered: " + Printer.pretty(scalaDoc))
-    rendered mustEqual """JObject(JField("lotto",JObject(JField("lotto-id",JInt(5))::JField("winning-numbers",JArray(JInt(2)::JInt(45)::JInt(34)::JInt(23)::JInt(7)::JInt(5)::JInt(3)::Nil))::JField("winners",JArray(JObject(JField("winner-id",JInt(23))::JField("numbers",JArray(JInt(2)::JInt(45)::JInt(34)::JInt(23)::JInt(3)::JInt(5)::Nil))::Nil)::JObject(JField("winner-id",JInt(54))::JField("numbers",JArray(JInt(52)::JInt(3)::JInt(12)::JInt(11)::JInt(18)::JInt(22)::Nil))::Nil)::Nil))::Nil))::Nil)"""
-  }
-
 }

@@ -282,14 +282,14 @@ class BaseScalaCodeGenerator extends CodeGenerator with CodeGeneratorHelpers {
           "fieldName" -> constantField.name, 
           "typeSig"   -> typeSignatureOf(constantType, database),
           "extractor" -> getExtractorFor(constantType),
-          "json"      -> compact(renderScala(constantField.default))
+          "json"      -> constantField.default.toString
         )
       }
     }
 
     def buildXSchema() = {
       code.add("lazy val xschema: ${definitionType} = blueeyes.json.xschema.Extractors.XDefinitionExtractor.extract(${json}).asInstanceOf[${definitionType}]",
-        "json"           -> compact(renderScala(definition.serialize)),
+        "json"           -> definition.serialize.toString,
         "definitionType" -> definition.productPrefix
       )
     }
@@ -460,7 +460,7 @@ class BaseScalaCodeGenerator extends CodeGenerator with CodeGeneratorHelpers {
               }
             }
           }""", 
-          "defaultJValue"  -> compact(renderScala(multitype.default)),
+          "defaultJValue"  -> multitype.default.toString,
           "implicitPrefix" -> getImplicitPrefix(multitype)
         )
       }
@@ -494,7 +494,7 @@ class BaseScalaCodeGenerator extends CodeGenerator with CodeGeneratorHelpers {
                         code.add("extractField[${fieldType}](jvalue, \"${fieldName}\", ${json}, ${fieldExtractor})",
                           "fieldType"      -> typeSignatureOf(field.fieldType, database),
                           "fieldName"      -> field.name,
-                          "json"           -> compact(renderScala(field.default)),
+                          "json"           -> field.default.toString,
                           "fieldExtractor" -> getExtractorFor(field.fieldType)
                         )
                       }
@@ -597,7 +597,7 @@ class BaseScalaCodeGenerator extends CodeGenerator with CodeGeneratorHelpers {
       
         code.add("lazy val ${name}: ${type} = ${extractor}.extract(${json})",
           "name"      -> constant.name,
-          "json"      -> compact(renderScala(constant.default)),
+          "json"      -> constant.default.toString,
           "type"      -> typeSignatureOf(constant.constantType, database),
           "extractor" -> getExtractorFor(constant.constantType)
         )

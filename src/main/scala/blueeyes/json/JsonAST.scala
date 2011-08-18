@@ -553,6 +553,7 @@ object JsonAST {
     type Unboxed = String
     override def unbox = value
     override def sort: JString = this
+    override def toString = "JString(\"%s\")" format value
   }
   case object JString extends JManifest {
     type JType = JString
@@ -606,6 +607,7 @@ object JsonAST {
 
   case class JField(name: String, value: JValue) {
     def sort: JField = JField(name, value.sort)
+    override def toString = "JField(\"%s\", %s)".format(name, value)
   }
   
   // utility method
@@ -719,40 +721,6 @@ trait Printer {
       case JObject(obj)  =>
         val nested = break :: fields(trimObj(obj).map(renderField))
         text("{") :: nest(2, nested) :: break :: text("}")
-    }
-  }
-
-
-  /** Renders as Scala code, which can be copy/pasted into a lift-json scala
-   * application.
-   */
-  def renderScala(value: JValue): Document = {
-    val Quote = "\""
-    val Escaped = List("\\t" -> "\\t", "\\f" -> "\\f", "\\r" -> "\\r", "\\n" -> "\\n", "\\\\" -> "\\\\")
-
-    def scalaQuote(s: String) = Quote + (Escaped.foldLeft(s) { case (str, (a, b)) => str.replaceAll(a, b) }) + Quote
-
-    @tailrec def intersperse(l: List[Document], i: Document): Document = l match {
-      case x :: y :: xs => intersperse((x :: i :: y) :: xs, i)
-      case x :: Nil => x
-      case Nil => DocNil
-    }
-    
-    def renderScalaField(f: JField) = text("JField") :: text("(") :: text(scalaQuote(f.name)) :: text(",") :: renderScala(f.value) :: text(")")
-
-    def t(p: Product, doc: Document) = text(p.productPrefix) :: text("(") :: doc :: text(")")
-
-    value match {
-      case null => text("null")
-      case JNothing         => text("JNothing")
-      case JNull            => text("JNull")
-      case JBool(b)         => t(value, text(b.toString))
-      case JDouble(n)       => t(value, text(n.toString))
-      case JInt(n)          => t(value, text(n.toString))
-      case JString(null)    => t(value, text("null"))
-      case JString(s)       => t(value, text(scalaQuote(s)))
-      case JArray(elements) => t(value, intersperse(elements.map(renderScala) ::: List(text("Nil")), text("::")))
-      case JObject(fields)  => t(value, nest(2, break :: intersperse(fields.map(renderScalaField) ::: List(text("Nil")), text("::") :: break)))
     }
   }
 
