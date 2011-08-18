@@ -26,6 +26,10 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
   import JsonAST._
 
   override val defaultPrettyParams = Pretty.Params(2)
+
+  val numWorkers = Runtime.getRuntime.availableProcessors
+  
+  noDetailedDiffs()
   
   "JValue" should {
     "Functor identity" in {
@@ -55,7 +59,7 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
     }
   }
   
-  "JObject monoid" should {
+  "JObject merge" should {
     "define {} as identity" in {
       val prop = forAll { obj: JObject =>
         (obj merge JObject(Nil)) mustEqual obj
@@ -65,15 +69,7 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
       prop must pass
     }
     
-    "preserve associativity" in {
-      val prop = forAll { (x: JObject, y: JObject, z: JObject) =>
-        (x merge (y merge z)) mustEqual ((x merge y) merge z)
-      }
-      
-      prop must pass
-    }
-    
-    "merge with idempotency" in {
+    "be idempotent" in {
       val prop = forAll { obj: JObject =>
         (obj merge obj) mustEqual obj
       }
@@ -82,8 +78,8 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
     }
   }
   
-  "JArray monoid" should {
-    "define {} as identity" in {
+  "JArray merge" should {
+    "define [] as identity" in {
       val prop = forAll { arr: JArray =>
         (arr merge JArray(Nil)) mustEqual arr
         (JArray(Nil) merge arr) mustEqual arr
@@ -92,12 +88,31 @@ object JsonASTSpec extends Specification with ScalaCheck with ArbitraryJPath wit
       prop must pass
     }
     
-    "preserve associativity" in {
-      val prop = forAll { (x: JArray, y: JArray, z: JArray) =>
-        (x merge (y merge z)) mustEqual ((x merge y) merge z)
+    "be idempotent" in {
+      val prop = forAll { arr: JArray =>
+        (arr merge arr) mustEqual arr
       }
       
       prop must pass
+    }
+  }
+  
+  "JArray ++" should {
+    "define [] as identity" in {
+      val prop = forAll { arr: JArray =>
+        (arr ++ JArray(Nil)) mustEqual arr
+        (JArray(Nil) ++ arr) mustEqual arr
+      }
+      
+      prop must pass
+    }
+    
+    "preserve associativity" in {
+      val prop = forAll { (x: JArray, y: JArray, z: JArray) =>
+        (x ++ (y ++ z)) mustEqual ((x ++ y) ++ z)
+      }
+      
+      prop must pass(set(minTestsOk -> 1600, maxSize -> 200, workers -> numWorkers))
     }
   }
 
