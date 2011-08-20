@@ -25,6 +25,8 @@ object XmlExamples extends Specification {
   import JsonParser.parse
   import Xml._
   import scala.xml.{Group, Text}
+  
+  noDetailedDiffs()
 
   "Basic conversion example" in {
     val json = toJson(users1)
@@ -67,11 +69,28 @@ object XmlExamples extends Specification {
 
     val printer = new scala.xml.PrettyPrinter(100,2)
     val lotto: JObject = LottoExampleJson
-    val xml = toXml(JObject(lotto.fields.map {
-      case JField("winning-numbers", JArray(nums)) => JField("winning-numbers", flattenArray(nums))
-      case JField("numbers", JArray(nums)) => JField("numbers", flattenArray(nums))
-      case jfield => jfield
-    }))
+    
+    val obj2 = (lotto \ "lotto") match {
+      case JObject(fields) => JObject(fields map {
+        case JField("winning-numbers", JArray(nums)) => JField("winning-numbers", flattenArray(nums))
+        
+        case JField("winners", JArray(objs)) => JField("winners", JArray(objs map {
+          case JObject(fields) => JObject(fields map {
+            case JField("numbers", JArray(nums)) => JField("numbers", flattenArray(nums))
+            case jfield => jfield
+          })
+          
+          case v => v
+        }))
+        
+        case jfield => jfield
+      })
+      
+      case x => sys.error("This case should never arise (since we control the data): " + x)
+    }
+    
+    val lotto2 = JObject(List(JField("lotto", obj2)))
+    val xml = toXml(lotto2)
 
     printer.format(xml(0)) mustEqual printer.format(
       <lotto>
@@ -165,7 +184,7 @@ object XmlExamples extends Specification {
   def attrToObject(fieldName: String, attrName: String, f: JString => JValue)(json: JValue) = json.transform {
     case JObject(fields) => JObject(
       fields.flatMap {
-        case JField(n, v: JString) if n == attrName => Some(JField(n, f(v)))
+        case JField(n, v: JString) if n == attrName => Some(JField(n, JObject(JField(attrName, f(v)) :: Nil)))
         case JField(n, JString("")) if n == fieldName => None
         case field => Some(field)
       }

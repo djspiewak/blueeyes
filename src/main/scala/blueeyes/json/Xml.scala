@@ -170,13 +170,13 @@ object Xml {
    */
   def toXml(json: JValue): NodeSeq = {
     def toJValueXml(name: String, json: JValue): NodeSeq = json match {
-      case JObject(fields) => new XmlNode(name, fields flatMap { f => toJValueXml(f.name, f.value) })
+      case JObject(fields) => xmlNode(name, fields flatMap { f => toJValueXml(f.name, f.value) })
       case JArray(xs) => xs flatMap { v => toJValueXml(name, v) }
-      case JDouble(x) => new XmlElem(name, x.toString)
-      case JString(x) => new XmlElem(name, x)
-      case JBool(x) => new XmlElem(name, x.toString)
-      case JInt(x) => new XmlElem(name, x.toString)
-      case JNull => new XmlElem(name, "null")
+      case JDouble(x) => xmlElem(name, x.toString)
+      case JString(x) => xmlElem(name, x)
+      case JBool(x) => xmlElem(name, x.toString)
+      case JInt(x) => xmlElem(name, x.toString)
+      case JNull => xmlElem(name, "null")
       case JNothing => Text("")
     }
 
@@ -186,7 +186,7 @@ object Xml {
     }
   }
 
-  private[json] class XmlNode(name: String, children: Seq[Node]) extends Elem(null, name, xml.Null, TopScope, children :_*)
+  def xmlNode(name: String, children: Seq[Node]) = Elem(null, name, xml.Null, TopScope, children :_*)
 
-  private[json] class XmlElem(name: String, value: String) extends Elem(null, name, xml.Null, TopScope, Text(value))
+  def xmlElem(name: String, value: String) = Elem(null, name, xml.Null, TopScope, Text(value))
 }

@@ -21,20 +21,20 @@ import Gen._
 import Arbitrary.arbitrary
 
 trait ArbitraryXml {
-  import Xml.{XmlNode, XmlElem}
+  import Xml.{xmlNode, xmlElem}
   import scala.xml.{Node, NodeSeq, Text}
 
   def genXml: Gen[Node] = frequency((2, wrap(genNode)), (3, genElem))
   
   def genNode = for {
     name <- genName
-    node <- Gen.containerOfN[List, Node](children, genXml) map { seq => new XmlNode(name, seq) }
+    node <- Gen.containerOfN[List, Node](children, genXml) map { seq => xmlNode(name, seq) }
   } yield node
 
   def genElem = for {
     name <- genName
     value <- arbitrary[String]
-  } yield new XmlElem(name, value)
+  } yield xmlElem(name, value)
 
   def genName = frequency((2, identifier), (1, value("const")))
   private def children = choose(1, 3).sample.get
