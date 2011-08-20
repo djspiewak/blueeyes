@@ -468,7 +468,8 @@ object JsonAST {
      */
     def flattenWithPath: List[(JPath, JValue)] = {
       def flatten0(path: JPath)(value: JValue): List[(JPath, JValue)] = value match {
-        case JObject(fields) => fields.map(_.value).flatMap(flatten0(path))
+        case JObject(fields) =>
+          fields flatMap { case JField(name, value) => flatten0(path \ name)(value) }
 
         case JArray(elements) => elements.zipWithIndex.flatMap { 
           case (element, index) => flatten0(path \ index)(element)
