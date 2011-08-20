@@ -296,20 +296,31 @@ object JsonAST {
      * </pre>
      */
     def mapUpWithPath(f: (JPath, JValue) => JValue): JValue = {
-      def rec(p: JPath, v: JValue): JValue = v match {
-        case JObject(l) => f(p, JObject(l.flatMap(field => rec(p, field.value) match {
-          case JNothing => Nil
-          case x => JField(field.name, x) :: Nil
-        })))
-
-        case JArray(l) => f(p, JArray(l.zipWithIndex.flatMap(t => rec(p \ t._2, t._1) match {
-          case JNothing => Nil
-          case x => x :: Nil
-        })))
-
-        case x => f(p, x)
+      def loop(p: JPath, v: JValue): JValue = v match {
+        case JObject(fields) => {
+          val fields2 = fields flatMap { field =>
+            loop(p \ field.name, field.value) match {
+              case JNothing => Nil
+              case v => JField(field.name, v) :: Nil
+            }
+          }
+          f(p, JObject(fields2))
+        }
+        
+        case JArray(elems) => {
+          val elems2 = elems.zipWithIndex flatMap {
+            case (e, i) => loop(p \ i, e) match {
+              case JNothing => Nil
+              case v => v :: Nil
+            }
+          }
+          f(p, JArray(elems2))
+        }
+        
+        case v => f(p, v)
       }
-      rec(JPath.Identity, this)
+      
+      loop(JPath.Identity, this)
     }
 
     /** Return a new JValue resulting from applying the given function <code>f</code>
