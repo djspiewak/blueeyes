@@ -574,7 +574,7 @@ object JsonAST {
 
   case class JArray(elements: List[JValue]) extends JValue {
     type Unboxed = List[Any]
-    override lazy val unbox = elements.map(_.unbox)
+    override lazy val unbox = elements filter (JNothing !=) map { _.unbox }
     override def sort: JArray = JArray(elements.map(_.sort).sorted(JValueOrdering))
     override def apply(i: Int): JValue = elements.lift(i).getOrElse(JNothing)
     
@@ -591,7 +591,18 @@ object JsonAST {
 
   case class JObject(fields: List[JField]) extends JValue {
     type Unboxed = Map[String, Any]
-    override lazy val unbox = fields.map[(String, Any), Map[String, Any]](f => (f.name, f.value.unbox))(collection.breakOut)
+    
+    override lazy val unbox = {
+      val back = fields filter {
+        case JField(_, JNothing) => false
+        case JField(_, _) => true
+      }
+      
+      back.map[(String, Any), Map[String, Any]]({
+        case JField(name, value) => (name, value.unbox)
+      })(collection.breakOut)
+    }
+    
     override def sort: JObject = JObject(fields.map(_.sort).sorted(JFieldOrdering))
     
     def merge(that: JObject)(implicit strategy: MergeStrategy) = {
