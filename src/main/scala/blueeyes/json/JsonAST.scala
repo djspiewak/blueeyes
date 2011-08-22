@@ -132,10 +132,7 @@ object JsonAST {
         case JField(_, value) => findInValue(value)
       }
       
-      findInValue(this) match {
-        case x :: Nil => x
-        case x => JArray(x)
-      }
+      JArray(findInValue(this))
     }
 
     /** XPath-like expression to query JSON fields by type. Matches only fields on
